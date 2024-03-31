@@ -2,7 +2,7 @@ const fs = require('fs');
 const { createCanvas } = require('canvas');
 const { Chart, registerables } = require('chart.js');
 Chart.register(...registerables); 
-const DEFAULT_BRANCH = 'main';
+const DEFAULT_BRANCH = 'master';
 const colors = [
     '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
     '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
@@ -16,49 +16,49 @@ const colors = [
     '#606060', '#E6EBD9', '#D3DFB8', '#2A9FD6', '#FFABAB'
 ];
 
-function create_branch_graph(logs,ctx, points, branch, idx, branches){
-    // Crear un lienzo
-    let height = 29.5*logs.length;
-    const main_canvas = createCanvas(60*branches.length, height);//para dos 55, para 3 es 84
+function create_branch_graph(logs, ctx, points, branch, idx, branches) {
+    // Create a canvas
+    let height = 29.5 * logs.length;
+    const main_canvas = createCanvas(60 * branches.length, height);
     const main_ctx = main_canvas.getContext('2d');
 
     let point_radius = [];
     logs.forEach((log, index) => {
-        if(log.branch == branch){
+        if (log.branch == branch) {
             point_radius.push(colors[idx]);
-        }else{
+        } else {
             point_radius.push('rgba(0, 0, 0, 0)');
         }
     });
     
-    let last_position = get_last_position(branches[idx],logs);
+    let last_position = get_last_position(branches[idx], logs);
     let x_point = [];
     let band = false;
-    let border_style = []
+    let border_style = [];
     logs.forEach((log, index) => {
-        if(log.branch != branch && !band){
-            border_style.push(NaN)
-        }else{
-            band=true;
-            border_style.push(0)
+        if (log.branch != branch && !band) {
+            border_style.push(NaN);
+        } else {
+            band = true;
+            border_style.push(0);
         }
-        if (branches[idx] === DEFAULT_BRANCH){
+        if (branches[idx] === DEFAULT_BRANCH) {
             x_point.push(0);
-        }else {
-            if(index <= last_position){
-                x_point.push(branches.length-idx-1);
-                if(index+1 < logs.length){
-                    if('branch_created' in log){
-                        if(branch == log.branch && log.branch != logs[index+1].branch){
+        } else {
+            if (index <= last_position) {
+                x_point.push(branches.length - idx - 1);
+                if (index + 1 < logs.length) {
+                    if ('branch_created' in log) {
+                        if (branch == log.branch && log.branch != logs[index + 1].branch) {
                             let id = branches.findIndex((branch) => branch == log.branch_created);
-                            x_point[index+1] = branches.length-id-1;
+                            x_point[index + 1] = branches.length - id - 1;
                         }
-                    }else if('branch_merge' in log){
-                        if(branch == log.branch_merge){
+                    } else if ('branch_merge' in log) {
+                        if (branch == log.branch_merge) {
                             let id = branches.findIndex((branch) => branch == log.branch_merge);
-                            x_point[index] = id-1;
-                            border_style.push(0)
-                            border_style.push(0)
+                            x_point[index] = id - 1;
+                            border_style.push(0);
+                            border_style.push(0);
                         }
                     }
                 }
@@ -67,9 +67,10 @@ function create_branch_graph(logs,ctx, points, branch, idx, branches){
         }
 
     });
-    // Configurar el gráfico
+
+    // Chart configuration
     const chartConfig = {
-        type: 'line', // Cambiar el tipo de gráfico a 'line'
+        type: 'line', 
         data: {
             labels: points,
             datasets: [{
@@ -77,9 +78,9 @@ function create_branch_graph(logs,ctx, points, branch, idx, branches){
                 backgroundColor: 'rgba(75, 192, 192, 0)',
                 borderColor: colors[idx],
                 borderWidth: 4,
-                pointBackgroundColor: point_radius, // Color de fondo de los puntos
-                pointBorderColor: point_radius, // Color del borde de los puntos
-                pointRadius: 5, // Radio de los puntos
+                pointBackgroundColor: point_radius, 
+                pointBorderColor: point_radius, 
+                pointRadius: 5, 
             }]
         },
         options: {
@@ -107,83 +108,63 @@ function create_branch_graph(logs,ctx, points, branch, idx, branches){
         }
     };
 
-    // Crear el gráfico
+    // Create the chart
     new Chart(main_ctx, chartConfig);
     ctx.drawImage(main_canvas, 0, 0);
 }
 
-function print_labels(logs, labels, ctx, branches){
-    labels.forEach((log,idx) => {
+function print_labels(logs, labels, ctx, branches) {
+    labels.forEach((log, idx) => {
         ctx.fillStyle = colors[branches.indexOf(logs[idx].branch)];
-        ctx.fillText(log, 50*branches.length, 16+(30*idx));//150
+        ctx.fillText(log, 50 * branches.length, 16 + (30 * idx));
     });
 }
 
-function get_last_position(branch, datos) {
-    // Inicializar la variable para almacenar la última posición
-    let ultimaPosicion = -1;
-
-    // Iterar sobre el array de objetos
-    for (let i = 0; i < datos.length; i++) {
-        // Verificar si el branch actual coincide con el branch buscado
-        if (datos[i].branch === branch) {
-            ultimaPosicion = i; // Actualizar la última posición encontrada
+function get_last_position(branch, data) {
+    let lastPosition = -1;
+    for (let i = 0; i < data.length; i++) {
+        if (data[i].branch === branch) {
+            lastPosition = i;
         }
     }
-
-    // Devolver la última posición encontrada
-    return ultimaPosicion;
-}
-function get_count_views_branch(logs, branch) {
-    return logs.reduce((contador, elemento) => {
-        if (elemento.branch === branch) {
-            contador++;
-        }
-        return contador;
-    }, 0);
+    return lastPosition;
 }
 
-// Función para generar el gráfico
 function generate_graph(logs, branches) {
     let logs_label = [];
     let points = [];
     logs.forEach(log => {
-        if(log.message.includes("["+log.branch+"] "+"Created")){
-            logs_label.push(log.message+" from ["+log.branch_created + "] branch")
-        }else{
-            logs_label.push("["+log.branch+"]"+" ["+log.author_name+"] - "+log.message)
+        if (log.message.includes("[" + log.branch + "] " + "Created")) {
+            logs_label.push(log.message + " from [" + log.branch_created + "] branch")
+        } else {
+            logs_label.push("[" + log.branch + "]" + " [" + log.author_name + "] - " + log.message)
         }
         points.push(0);
-    });    
-    
-    // Crear un lienzo
-    const canvas = createCanvas(800, 30*logs.length);
+    });
+
+    // Create a canvas
+    const canvas = createCanvas(800, 30 * logs.length);
     const ctx = canvas.getContext('2d');
     ctx.font = 'bold 16px Arial';
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ///////////////////////////////////////////////////////////////////////////
-    
     branches.forEach((branch, idx) => {
-        create_branch_graph(logs,ctx, points, branch, idx, branches);
+        create_branch_graph(logs, ctx, points, branch, idx, branches);
     });
-    
 
-
-    ///////////////////////////////////////////////////////////////////
     print_labels(logs, logs_label, ctx, branches)
 
-
-    // Guardar el gráfico como un archivo PNG
+    // Save the graph as a PNG file
     try {
         const buffer = canvas.toBuffer('image/png');
-        fs.writeFileSync('git_grapher.png', buffer);
+        fs.writeFileSync('gitgrapher.png', buffer);
         console.log('-> Successfully generated graph!!!');
     } catch (error) {
         console.log("-> There is no commit yet.")
     }
 }
+
 module.exports = {
     generate_graph,
     get_last_position
