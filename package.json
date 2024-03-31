@@ -1,14 +1,14 @@
 {
-  "name": "gitgraph",
+  "name": "gitgrapher-png",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "GitGrapher is a powerful tool that allows you to intuitively and elegantly visualize the commit history of your Git repositories. With GitGrapher, you can generate detailed, interactive graphs that give you a complete view of the evolution of your project over time. From a simple workflow to complex branches, GitGrapher gives you an easy way to understand the history of your code. Additionally, GitGrapher automatically exports an image every time a commit is made, allowing you to visually document the progress of your project. At the moment, this export feature is only available for merge commits. Explore your commits like never before with GitGrapher!",
+  "main": "create_graph.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node create_graph.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Albert Araya",
   "license": "ISC",
+  "keywords": ["git","visualization","gitgraph","grapher","graph","export","png"],
   "dependencies": {
     "canvas": "^2.11.2",
     "chalk": "^5.3.0",
@@ -18,5 +18,9 @@
     "gitlog": "^4.0.8",
     "nodemon": "^3.1.0",
     "simple-git": "^3.24.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aaraya-dev/gitgrapher-png"
   }
 }
