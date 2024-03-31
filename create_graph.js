@@ -4,7 +4,8 @@ const exec = util.promisify(require('child_process').exec);
 const { generate_graph, get_last_position } = require('./graph');
 const gitlog = require("gitlog").default;
 
-const DIR = './project';
+const DIR = './../project';
+let DEFAULT_BRANCH = 'main';
 
 const git = simpleGit({ baseDir: DIR });
 
@@ -67,7 +68,7 @@ async function show_unique_logs(branch) {
         let type = "";
         const regex = /([0-9a-f]+)\s+(\w+)@\{([^}]+)\}\s*:\s*commit:\s*([^:]+)/;
         const regex_branch = /([0-9a-f]+)\s+(\w+)@\{([^}]+)\}\s*:\s*branch:\s*([^:]+)/;
-        const regex_merge = /([0-9a-f]+)\s+([^@]+)@\{([^}]+)\}\s*:\s*commit \(merge\):\s*([^:]+)/;
+        const regex_merge = /([0-9a-f]+)\s+(\w+)@\{([^}]+)\}\s*:\s*merge (\w+):\s*([^:]+)/;
         const regex_initial = /([0-9a-f]+)\s+([^@]+)@\{([^}]+)\}\s*:\s*commit \(initial\):\s*([^:]+)/;
         raws.pop();
 
@@ -89,21 +90,54 @@ async function show_unique_logs(branch) {
                     type = "created"
                 } else if (raw.includes("merge")) {
                     match = raw.match(regex_merge);
-                    type = "merge"
+                    type = "merge";
+                    if(!match){
+                        const regex_merge = /([0-9a-f]+)\s+([^@]+)@\{([^}]+)\}\s*: commit \(merge\): Merge branch '([^']+)'/;
+                        match = raw.match(regex_merge);
+                    }
                 } else if (raw.includes("initial")) {
                     match = raw.match(regex_initial);
                     type = "initial"
                 }
                 if (match != null) {
                     const date = new Date(match[3]);
-                    const message = match[4];
                     const hash = match[1];
-                    json_history.push({
-                        type: type,
-                        hash: hash,
-                        date: date,
-                        message: message,
-                    })
+                    if(type == "merge"){
+                        const branch_merge = match[4];   
+                        const message = match[5];
+                        if(message){
+                            json_history.push({
+                                type: type,
+                                branch_merge: branch_merge,
+                                hash: hash,
+                                date: date,
+                                message: message,
+                            })
+                        }else{
+                            const message = match[4];    
+                            json_history.push({
+                                type: type,
+                                hash: hash,
+                                date: date,
+                                message: message,
+                            })
+
+                        }
+                    }else{       
+                        const message = match[4];                 
+                        json_history.push({
+                            type: type,
+                            hash: hash,
+                            date: date,
+                            message: message,
+                        })
+                    }
+                    if(type == "initial") {
+                        const regex = /\S+\s+(\w+)\@\{.*?\}/;
+                        const match = raw.match(regex);
+                        const branch = match[1];
+                        DEFAULT_BRANCH = branch;
+                    }
                 }
             }
         });
@@ -119,7 +153,9 @@ function join_logs(logs, unique) {
     const logs_unique = unique.map(item => item.hash);
     const new_logs = logs.filter(item => {
         if (logs_unique.includes(item.abbrevHash)) {
-            item.type = unique.find(element => element.hash === item.abbrevHash).type;
+            const aux = unique.find(element => element.hash === item.abbrevHash)
+            item.type = aux.type;
+            item.branch_merge = aux.branch_merge;
             return true;
         }
         return false;
@@ -129,23 +165,37 @@ function join_logs(logs, unique) {
 
 function insert_special_logs(all_logs, branch) {
     const created_type = branch.logs.find(objeto => objeto.type === 'created');
-    const merge_type = branch.logs.find(objeto => objeto.type === 'merge');
-    if (merge_type) {
-        const index = all_logs.findIndex(objeto => objeto.hash_short === merge_type.abbrevHash);
-        const regex = /Merge branch '([^']+)'/;
-        const match = all_logs[index].message.match(regex);
-        const branch_merge = match[1];
-        all_logs[index].branch_merge = branch_merge;
-    }
+    const merge_type_array = branch.logs.filter(objeto => objeto.type === 'merge');
     if (created_type) {
         const index = all_logs.findIndex(objeto => objeto.hash_short === created_type.abbrevHash && objeto.branch === branch.branch);
         const branch_created = all_logs[index - 1].branch;
         const branch_name = branch.branch;
-        add_log(all_logs, index, branch_name, branch_created, all_logs[index]);
+        add_log(branch_name, branch_created, all_logs[index]);
+    }
+    if (merge_type_array.length > 0) {
+        merge_type_array.forEach(merge_type => {
+            const index = all_logs.findIndex(objeto => objeto.hash_short === merge_type.abbrevHash);
+            let branch_merge = null;
+            if(merge_type.branch_merge){
+                branch_merge = merge_type.branch_merge;
+                all_logs[index].message = "Merge branch '"+branch_merge+"'"
+                all_logs[index].branch_merge = branch_merge;
+                if(index+1<all_logs.length){
+                    let aux = {...all_logs[index]}
+                    all_logs[index] = all_logs[index+1];
+                    all_logs[index+1] = aux;
+                }
+            }else{
+                const regex = /Merge branch '([^']+)'/;
+                const match = all_logs[index].message.match(regex);
+                branch_merge = match[1];
+                all_logs[index].branch_merge = branch_merge;
+            }
+        });
     }
 }
 
-function add_log(logs, index, branch_name, branch_created, log) {
+function add_log(branch_name, branch_created, log) {
     log.message = "[" + branch_name + "] " + "Created";
     log.branch_created = branch_created;
     log.branch = branch_name;
@@ -161,38 +211,6 @@ function get_order_branches(branches, logs) {
     });
     array_order.sort((a, b) => a.last_position - b.last_position);
     return array_order;
-}
-
-function short_created_branch(database_log) {
-    database_log.sort((a, b) => {
-        // Si ambos tienen branch_created
-        if (a.branch_created && b.branch_created) {
-          // Si las fechas son iguales y a tiene branch_created, a debe ir antes que b
-          if (a.date === b.date && a.branch_created === b.branch_created) {
-            return -1;
-          }
-          // Si las fechas son iguales y b tiene branch_created, b debe ir antes que a
-          else if (a.date === b.date && a.branch_created !== b.branch_created) {
-            return 1;
-          }
-          // En cualquier otro caso, ordenar por fecha
-          else {
-            return new Date(a.date) - new Date(b.date);
-          }
-        }
-        // Si solo a tiene branch_created, a debe ir antes que b
-        else if (a.branch_created && !b.branch_created) {
-          return -1;
-        }
-        // Si solo b tiene branch_created, b debe ir antes que a
-        else if (!a.branch_created && b.branch_created) {
-          return 1;
-        }
-        // Si ninguno tiene branch_created, ordenar por fecha
-        else {
-          return new Date(a.date) - new Date(b.date);
-        }
-      });
 }
 
 // Data retrieval from the provided JSON
@@ -221,8 +239,9 @@ get_data().then(data => {
     let branches_order = data.map(entry => entry.branch);
     branches_order = get_order_branches(branches_order, database_log);
     const branches = branches_order.map(item => item.branch);
-
-    short_created_branch(database_log);
+    branches.sort((a, b) => {if (a === DEFAULT_BRANCH && b !== DEFAULT_BRANCH) {return 1;} else if (a !== DEFAULT_BRANCH && b === DEFAULT_BRANCH) {return -1;} else {return 0;}});
     
-    generate_graph(database_log, branches)
+    //console.log(database_log)
+
+    generate_graph(database_log, branches, DEFAULT_BRANCH)
 });

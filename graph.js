@@ -2,7 +2,7 @@ const fs = require('fs');
 const { createCanvas } = require('canvas');
 const { Chart, registerables } = require('chart.js');
 Chart.register(...registerables); 
-const DEFAULT_BRANCH = 'master';
+let DEFAULT_BRANCH = 'master';
 const colors = [
     '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
     '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
@@ -54,9 +54,10 @@ function create_branch_graph(logs, ctx, points, branch, idx, branches) {
                             x_point[index + 1] = branches.length - id - 1;
                         }
                     } else if ('branch_merge' in log) {
+                        //console.log(log)
                         if (branch == log.branch_merge) {
-                            let id = branches.findIndex((branch) => branch == log.branch_merge);
-                            x_point[index] = id - 1;
+                            let id = branches.findIndex((branch) => branch == log.branch);
+                            x_point[index] = branches.length - id -1;
                             border_style.push(0);
                             border_style.push(0);
                         }
@@ -130,7 +131,8 @@ function get_last_position(branch, data) {
     return lastPosition;
 }
 
-function generate_graph(logs, branches) {
+function generate_graph(logs, branches, default_branch) {
+    DEFAULT_BRANCH = default_branch;
     let logs_label = [];
     let points = [];
     logs.forEach(log => {
