@@ -1,2 +1,2 @@
 #!/bin/sh
-node ./node_modules/gitgrapher-png/create_graph.js
+node ./node_modules/gitgrapher-repo/create_graph.js
