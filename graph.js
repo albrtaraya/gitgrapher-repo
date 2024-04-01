@@ -161,9 +161,9 @@ function generate_graph(logs, branches, default_branch) {
     try {
         const buffer = canvas.toBuffer('image/png');
         fs.writeFileSync('gitgrapher.png', buffer);
-        console.log('-> Successfully generated graph!!!');
+        console.log('\x1b[32m%s\x1b[0m', 'Successfully generated graph!');
     } catch (error) {
-        console.log("-> There is no commit yet.")
+        console.error('\x1b[31m%s\x1b[0m', "- There is no commit yet.")
     }
 }
 

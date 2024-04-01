@@ -1,0 +1,2 @@
+#!/bin/sh
+node ./node_modules/gitgrapher-png/create_graph.js

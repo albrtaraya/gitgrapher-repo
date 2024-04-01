@@ -4,7 +4,7 @@ const exec = util.promisify(require('child_process').exec);
 const { generate_graph, get_last_position } = require('./graph');
 const gitlog = require("gitlog").default;
 
-const DIR = './../project';
+const DIR = './';
 let DEFAULT_BRANCH = 'main';
 
 const git = simpleGit({ baseDir: DIR });
@@ -241,7 +241,5 @@ get_data().then(data => {
     const branches = branches_order.map(item => item.branch);
     branches.sort((a, b) => {if (a === DEFAULT_BRANCH && b !== DEFAULT_BRANCH) {return 1;} else if (a !== DEFAULT_BRANCH && b === DEFAULT_BRANCH) {return -1;} else {return 0;}});
     
-    //console.log(database_log)
-
     generate_graph(database_log, branches, DEFAULT_BRANCH)
 });
