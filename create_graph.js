@@ -4,7 +4,7 @@ const exec = util.promisify(require('child_process').exec);
 const { generate_graph, get_last_position } = require('./graph');
 const gitlog = require("gitlog").default;
 
-const DIR = './';
+const DIR = './../project';
 let DEFAULT_BRANCH = 'main';
 
 const git = simpleGit({ baseDir: DIR });
@@ -174,9 +174,12 @@ function insert_special_logs(all_logs, branch) {
     }
     if (merge_type_array.length > 0) {
         merge_type_array.forEach(merge_type => {
-            const index = all_logs.findIndex(objeto => objeto.hash_short === merge_type.abbrevHash);
+            let index = all_logs.findIndex(objeto => objeto.hash_short === merge_type.abbrevHash);
             let branch_merge = null;
             if(merge_type.branch_merge){
+                if(merge_type.branch_merge==all_logs[index].branch){
+                    index++;
+                }
                 branch_merge = merge_type.branch_merge;
                 all_logs[index].message = "Merge branch '"+branch_merge+"'"
                 all_logs[index].branch_merge = branch_merge;
@@ -234,6 +237,7 @@ get_data().then(data => {
     data.forEach(branch => {
         insert_special_logs(database_log, branch);
     });
+    database_log.sort((a, b) => (new Date(a.date) - new Date(b.date)));
     database_log.reverse()
 
     let branches_order = data.map(entry => entry.branch);

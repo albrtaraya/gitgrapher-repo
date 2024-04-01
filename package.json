@@ -9,7 +9,15 @@
   },
   "author": "Albert Araya",
   "license": "ISC",
-  "keywords": ["git","visualization","gitgraph","grapher","graph","export","png"],
+  "keywords": [
+    "git",
+    "visualization",
+    "gitgraph",
+    "grapher",
+    "graph",
+    "export",
+    "png"
+  ],
   "dependencies": {
     "canvas": "^2.11.2",
     "chalk": "^5.3.0",
