@@ -12,10 +12,6 @@ const destinationFilePathMerge = path.join(__dirname, '..', '..', '.git', 'hooks
 const destinationFilePathRebase = path.join(__dirname, '..', '..', '.git', 'hooks', 'post-rebase');
 
 // Función para limpiar la línea anterior en la consola
-function clearPreviousLine() {
-    process.stdout.clearLine();
-    process.stdout.cursorTo(0);
-  }
 
 // Lee el contenido del archivo origen
 fs.readFile(sourceFilePathMerge, 'utf8', (err, data) => {
@@ -27,8 +23,6 @@ fs.readFile(sourceFilePathRebase, 'utf8', (err, data) => {
 fs.readFile(sourceFilePathCommit, 'utf8', (err, data) => {
   // Escribe el contenido en el archivo de destino
   fs.writeFile(destinationFilePathCommit, data, 'utf8', (err) => {
-    clearPreviousLine()
-    console.log('- Starting the installation process...');
     console.log('\x1b[32m%s\x1b[0m', 'Installation complete!');
   });
 });
