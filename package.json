@@ -1,6 +1,6 @@
 {
-  "name": "gitgrapher-png",
-  "version": "1.0.1",
+  "name": "gitgrapher-repo",
+  "version": "1.0.0",
   "description": "GitGrapher is a powerful tool that allows you to intuitively and elegantly visualize the commit history of your Git repositories.",
   "main": "create_graph.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "postinstall": "node create_git_file.js"
   },
   "author": "Albert Araya",
-  "license": "ISC",
+  "license": "MIT",
   "keywords": [
     "git",
     "visualization",
@@ -30,6 +30,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aaraya-dev/gitgrapher-png"
+    "url": "https://github.com/aaraya-dev/gitgrapher-repo"
   }
 }
