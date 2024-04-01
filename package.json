@@ -27,7 +27,14 @@
     "gitlog": "^4.0.8",
     "nodemon": "^3.1.0",
     "simple-git": "^3.24.0"
-  },
+  },  
+  "files": [
+    "check_folder.js",
+    "create_git_file.js",
+    "create_graph.js",
+    "graph.js",
+    "resources/"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/aaraya-dev/gitgrapher-repo"
