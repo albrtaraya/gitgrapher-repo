@@ -4,7 +4,7 @@ const exec = util.promisify(require('child_process').exec);
 const { generate_graph, get_last_position } = require('./graph');
 const gitlog = require("gitlog").default;
 
-const DIR = './../project';
+const DIR = './';
 let DEFAULT_BRANCH = 'main';
 
 const git = simpleGit({ baseDir: DIR });
